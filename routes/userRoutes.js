@@ -28,7 +28,7 @@ router.post('/change-avatar',authMiddleware, changeAvatar);
 // Edit user avatar
 // POST api/users/edit-user
 // Protected
-router.post('/edit-user', editUser);
+router.post('/edit-user',authMiddleware, editUser);
 
 // Get author
 // POST api/users/authors

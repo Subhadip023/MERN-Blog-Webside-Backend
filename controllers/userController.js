@@ -183,9 +183,58 @@ const changeAvatar = async (req, res, next) => {
 // edit user avatar
 //port : api/users/edit-user
 //Protected
-const editUser = (req, res, next) => {
-  res.json({ message: "Change avatar route reached" });
+const editUser = async (req, res, next) => {
+  try {
+    const { name, email, currentPassword, newPassword, confirmPassword } = req.body;
+    
+    // Check if all required fields are filled
+    if (!name || !email || !currentPassword || !newPassword || !confirmPassword) {
+      return next(new HttpErrors("Fill in all fields", 422));
+    }
+
+    // Get user by id
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return next(new HttpErrors("User not found", 404));
+    }
+
+    // Check if new email already exists
+    if (email !== user.email) {
+      const emailExist = await User.findOne({ email });
+      if (emailExist) {
+        return next(new HttpErrors("Email already exists", 422));
+      }
+    }
+
+    // Check if current password is valid
+    const validUserPassword = await bcrypt.compare(currentPassword, user.password);
+    if (!validUserPassword) {
+      return next(new HttpErrors("Invalid current password", 422));
+    }
+
+    // Compare new password and confirm password
+    if (newPassword !== confirmPassword) {
+      return next(new HttpErrors("New passwords do not match", 422));
+    }
+
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update user information
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      { name, email, password: hashedPassword },
+      { new: true }
+    );
+
+    // Return updated user information
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    return next(new HttpErrors(error));
+  }
 };
+
 
 // get author
 //port : api/users/authors
