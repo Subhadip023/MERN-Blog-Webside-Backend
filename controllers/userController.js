@@ -1,15 +1,21 @@
 import HttpErrors from "../models/errorModel.js";
 import User from "../models/userModel.js";
-import bcrypt from 'bcrypt'
-import jwt from "jsonwebtoken"
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import fs from "fs";
+import path from "path";
+
+import { v4 as uuid } from "uuid";
+import { error } from "console";
+
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
+
 
 // Register a new user
 // posrt api/users/register
 
 //unProtected
-const registerUser = async(req, res, next) => {
- 
-
+const registerUser = async (req, res, next) => {
   try {
     const { name, email, password, password2 } = req.body;
     if (!name || !email || !password) {
@@ -19,26 +25,34 @@ const registerUser = async(req, res, next) => {
 
     const emailExist = await User.findOne({ email: newEmail });
     if (emailExist) {
-        return next(new HttpErrors("Email already exists", 422));
+      return next(new HttpErrors("Email already exists", 422));
     }
 
     if (password !== password2) {
-        return next(new HttpErrors("Passwords don't match", 422));
+      return next(new HttpErrors("Passwords don't match", 422));
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
-    const newUser = await User.create({ name, email: newEmail, password: hashPassword });
+    const newUser = await User.create({
+      name,
+      email: newEmail,
+      password: hashPassword,
+    });
     res.status(201).json(`New user ${newUser.email} Registerd`);
   } catch (error) {
     // Handle specific error types and provide corresponding error messages
-    if (error.name === 'ValidationError') {
+    if (error.name === "ValidationError") {
       // Handle Mongoose validation errors
-      const errorMessage = Object.values(error.errors).map((val) => val.message).join(', ');
+      const errorMessage = Object.values(error.errors)
+        .map((val) => val.message)
+        .join(", ");
       return next(new HttpErrors(errorMessage, 422));
     } else {
       // Handle other types of errors
-      return next(new HttpErrors("User registration failed. Please try again later.", 500));
+      return next(
+        new HttpErrors("User registration failed. Please try again later.", 500)
+      );
     }
   }
 };
@@ -68,10 +82,12 @@ const loginUser = async (req, res, next) => {
     }
 
     // If email and password are correct, create and return a token (you'll need to implement this)
-  // Generate a JWT token or session token here
-const {_id:id,name}=user;
-const token = jwt.sign({id,name},process.env.JWT_SECRRET,{expiresIn:"1h"}); 
-    res.status(200).json({ token,id,name }); // Return the token to the client
+    // Generate a JWT token or session token here
+    const { _id: id, name } = user;
+    const token = jwt.sign({ id, name }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+    res.status(200).json({ token, id, name }); // Return the token to the client
   } catch (error) {
     // Handle unexpected errors
     console.error("Login failed:", error);
@@ -82,25 +98,87 @@ const token = jwt.sign({id,name},process.env.JWT_SECRRET,{expiresIn:"1h"});
 // user Profile
 // posrt api/users/:id
 //Protected
-const getUser= async (req, res, next) => {
-  try{
-  const {id} = req.params;
-  const user =await User.findById(id).select('-password');
-  if(!user) {
-  return next(new HttpErrors("User not found.", 404))
-  }
-  res.status(200).json(user);
+const getUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id).select("-password");
+    if (!user) {
+      return next(new HttpErrors("User not found.", 404));
+    }
+    res.status(200).json(user);
   } catch (error) {
-  return next(new HttpErrors(error))
+    return next(new HttpErrors(error));
   }
-}
+};
+
 // change user avatar
 //port : api/users/change-avatar
 //Protected
-const changeAvatar = (req, res, next) => {
-  // console.log(req.file)
-  res.json("Change user Profile");
+const checkImage = (req, res, next) => {
+  if (!req.files || !req.files.avatar) {
+    return next(new HttpErrors("Please choose an image", 422));
+  }
+  next();
 };
+
+const changeAvatar = async (req, res, next) => {
+  try {
+    // Find user from database
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return next(new HttpErrors("User not found", 404));
+    }
+
+    if (user.avatar) {
+      fs.unlink(path.join(__dirname, "../", "uploads", user.avatar), (err) => {
+        if (err) {
+          return next(new HttpErrors(err));
+        }
+      });
+    }
+
+    const { avatar } = req.files;
+    if (!avatar) {
+      return next(new HttpErrors("Please choose an image", 422));
+    }
+
+    if (avatar.size > 50000) {
+      return next(
+        new HttpErrors("Profile picture too big. Should be less than 50kb")
+      );
+    }
+
+    let filename = avatar.name;
+    let splitedfilename = filename.split(".");
+    let newfilename =
+      splitedfilename[0] +
+      uuid() +
+      "." +
+      splitedfilename[splitedfilename.length - 1];
+
+    avatar.mv(
+      path.join(__dirname, "../", "uploads", newfilename),
+      async (error) => {
+        if (error) {
+          return next(new HttpErrors(error));
+        }
+        const updateavatar = await User.findByIdAndUpdate(
+          req.user.id,
+          { avatar: newfilename },
+          { new: true }
+        );
+        if (!updateavatar) {
+          return next(new HttpErrors("Avatar couldn't be changed.", 422));
+        }
+        res.status(200).json(updateavatar);
+      }
+    );
+  } catch (error) {
+    return next(new HttpErrors(error));
+  }
+};
+
 
 // edit user avatar
 //port : api/users/edit-user
@@ -114,13 +192,12 @@ const editUser = (req, res, next) => {
 //un Protected
 const getAuthor = async (req, res, next) => {
   try {
-    const authors = await User.find().select('-password');
+    const authors = await User.find().select("-password");
     res.json({ authors });
   } catch (error) {
     console.error("Failed to retrieve authors:", error);
     return next(new HttpErrors("Failed to retrieve authors", 500));
   }
 };
-
 
 export { getAuthor, editUser, changeAvatar, getUser, loginUser, registerUser };

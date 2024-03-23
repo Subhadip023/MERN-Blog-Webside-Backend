@@ -1,5 +1,8 @@
 import { Router } from "express";
 import {getAuthor,editUser,changeAvatar,getUser,loginUser,registerUser} from '../controllers/userController.js';
+import authMiddleware from "../middleware/authMiddleWIre.js";
+
+
 
 
 const router=Router()
@@ -20,7 +23,7 @@ router.post('/login', loginUser);
 // Change user avatar
 // POST api/users/change-avatar
 // Protected
-router.post('/change-avatar', changeAvatar);
+router.post('/change-avatar',authMiddleware, changeAvatar);
 
 // Edit user avatar
 // POST api/users/edit-user

@@ -4,6 +4,11 @@ import { connect } from 'mongoose';
 import dotenv from 'dotenv';
 import {getAuthor,editUser,changeAvatar,getUser,loginUser,registerUser} from './controllers/userController.js'
 import { notFound, errorHandeler } from './middleware/errorMidelwar.js';
+import upload from "express-fileupload"
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+
 dotenv.config();
 
 // Import route handlers
@@ -16,6 +21,12 @@ const app = express();
 app.use(express.json({ extended: true }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
+
+app.use(upload());
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+app.use('/uploads', express.static(__dirname + "/uploads"));
+
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
