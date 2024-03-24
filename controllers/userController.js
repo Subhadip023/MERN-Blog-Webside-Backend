@@ -6,7 +6,6 @@ import fs from "fs";
 import path from "path";
 
 import { v4 as uuid } from "uuid";
-import { error } from "console";
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
