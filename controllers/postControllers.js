@@ -177,7 +177,26 @@ const editPost = async (req, res, next) => {
 // protected
 const deletePost = async (req, res, next) => {
 try {
-  
+  const postId=req.params.id;
+  if(!postId){
+    return next(new HttpErrors("Post not available,400"))
+  }
+  const post =await Post.findById(postId);
+  const filename=post.thumbnail;
+  //delete the thumbnail 
+
+  fs.unlink(path.join(__dirname,'../','uploads',filename),async (err)=>{if(err){
+    return next(new HttpErrors(err));
+
+  }else{
+    await Post.findByIdAndDelete(postId);
+    const currentUser=await User.findById(req.user.id);
+    const userPostCount=currentUser.posts-1;
+    await User .findByIdAndUpdate(req.user.id,{posts:userPostCount})
+  }
+
+  })
+  res.status(200).json(`Post ${postId} Delete succesfully`);
 } catch (error) {
   return next(new HttpErrors(error));
 
