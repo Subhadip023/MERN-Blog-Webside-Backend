@@ -21,7 +21,7 @@ const app = express();
 app.use(express.json({ extended: true }));
 app.use(express.urlencoded({ extended: true }));
 // app.use(cors({ credentials: true, origin: "https://mern-blog-webside.onrender.com" }));
-app.use(cors({ credentials: true, origin: "http://localhost:3000" }));// Change it for test in local directory 
+app.use(cors({ credentials: true, origin: process.env.origin }));// Change it for test in local directory 
 
 app.use(upload());
 const __filename = fileURLToPath(import.meta.url);
