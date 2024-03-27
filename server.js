@@ -20,7 +20,7 @@ const app = express();
 // Middleware
 app.use(express.json({ extended: true }));
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
+app.use(cors({ credentials: true, origin: "https://mern-blog-webside.onrender.com/" }));
 
 app.use(upload());
 const __filename = fileURLToPath(import.meta.url);
