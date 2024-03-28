@@ -19,47 +19,33 @@ const createPost = async (req, res, next) => {
       return next(new HttpErrors("Fill in all fields.", 422));
     }
 
-    // Generate a unique filename for the uploaded file
-    let filename = thumbnail.name;
+    // Read the image file data
+    let thumbnailData = thumbnail.data;
 
-    let splittedFilename = filename.split(".");
-    let newFilename =
-      splittedFilename[0] +
-      uuid() +
-      "." +
-      splittedFilename[splittedFilename.length - 1];
+    // Create a new post with the uploaded file
+    const newPost = await Post.create({
+      title,
+      category,
+      description,
+      thumbnail: thumbnailData, // Save image data as thumbnail
+      creator: req.user.id,
+    });
+    
+    if (!newPost) {
+      return next(new HttpErrors("Post Couldn't be created.", 422));
+    }
+    
+    // Update user's post count
+    const currentUser = await User.findById(req.user.id);
+    const userPostCount = currentUser.posts + 1;
+    await User.findByIdAndUpdate(req.user.id, { posts: userPostCount });
 
-    // Move the uploaded file to the desired location
-    thumbnail.mv(
-      path.join(__dirname, "..", "uploads", newFilename),
-      async (err) => {
-        if (err) {
-          return next(new HttpErrors(err));
-        } else {
-          // Create a new post with the uploaded file
-          const newPost = await Post.create({
-            title,
-            category,
-            description,
-            thumbnail: newFilename,
-            creator: req.user.id,
-          });
-          if (!newPost) {
-            return next(new HttpErrors("Post Couldn't be created.", 422));
-          }
-          // Update user's post count
-          const currentUser = await User.findById(req.user.id);
-          const userPostCount = currentUser.posts + 1;
-          await User.findByIdAndUpdate(req.user.id, { posts: userPostCount });
-
-          res.status(200).json(newPost);
-        }
-      }
-    );
+    res.status(200).json(newPost);
   } catch (error) {
     return next(new HttpErrors(error));
   }
 };
+
 
 // get  Post cntroller
 // GET /api/posts
