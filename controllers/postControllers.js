@@ -103,9 +103,8 @@ const editPost = async (req, res, next) => {
   try {
     let updatePost;
     const postId = req.params.id;
-    const { title, description, category } = req.body;
+    const { title, description, category,thumbnail } = req.body;
     // let thumbnail = req.files.thumbnail;
-
     if (!title || !description || !category) {
       return next(new HttpErrors("Fill all the fields", 422));
     }
@@ -116,7 +115,12 @@ const editPost = async (req, res, next) => {
         { title, category, description },
         { new: true }
       );
-    } 
+    } else{
+      updatePost = await Post.findByIdAndUpdate(
+        postId,
+        { title, category, description,thumbnail },
+        { new: true });
+    }
 
     if (!updatePost) {
       return next(new HttpErrors("Couldn't update post", 400));
@@ -127,6 +131,8 @@ const editPost = async (req, res, next) => {
     return next(new HttpErrors("from backend",error));
   }
 };
+  
+
 
 //   DELETE post
 // DELETE /api/posts/:id

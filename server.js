@@ -19,9 +19,10 @@ const app = express();
 
 // Middleware
 app.use(express.json({ extended: true }));
+
 app.use(express.urlencoded({ extended: true }));
 // app.use(cors({ credentials: true, origin: "https://mern-blog-webside.onrender.com" }));
-const allowedOrigins = ["http://localhost:3000", "https://mern-blog-webside.onrender.com"];
+const allowedOrigins = [process.env.origin1, process.env.origin2];
 
 app.use(cors({
   credentials: true,
