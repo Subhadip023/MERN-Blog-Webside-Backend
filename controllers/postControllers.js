@@ -104,7 +104,7 @@ const editPost = async (req, res, next) => {
     let updatePost;
     const postId = req.params.id;
     const { title, description, category } = req.body;
-    let thumbnail = req.files.thumbnail;
+    // let thumbnail = req.files.thumbnail;
 
     if (!title || !description || !category) {
       return next(new HttpErrors("Fill all the fields", 422));
@@ -117,33 +117,12 @@ const editPost = async (req, res, next) => {
         { new: true }
       );
     } else {
-      // Get old post from database
-      const oldPost = await Post.findById(postId);
-
-      // Delete old thumbnail
-      try {
-        await fs.promises.unlink(path.join(__dirname, "..", "/uploads", oldPost.thumbnail));
-      } catch (err) {
-        return next(new HttpErrors(err));
-      }
-
-      // Upload new thumbnail
-      const filename = thumbnail.name;
-      const splitFilename = filename.split('.');
-      const newFilename = splitFilename[0] + uuid() + '.'+ splitFilename[splitFilename.length - 1];
-      
-      try {
-        await thumbnail.mv(path.join(__dirname, '..', '/uploads', newFilename));
-      } catch (err) {
-        return next(new HttpErrors(err));
-      }
-
-      // Update post with new thumbnail
       updatePost = await Post.findByIdAndUpdate(
         postId,
-        { title, category, description, thumbnail: newFilename },
+        { title, category, description,thumbnail },
         { new: true }
       );
+
     }
 
     if (!updatePost) {
