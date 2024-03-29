@@ -116,14 +116,7 @@ const editPost = async (req, res, next) => {
         { title, category, description },
         { new: true }
       );
-    } else {
-      updatePost = await Post.findByIdAndUpdate(
-        postId,
-        { title, category, description,thumbnail },
-        { new: true }
-      );
-
-    }
+    } 
 
     if (!updatePost) {
       return next(new HttpErrors("Couldn't update post", 400));
