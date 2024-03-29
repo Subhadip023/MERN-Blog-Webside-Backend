@@ -131,7 +131,7 @@ const editPost = async (req, res, next) => {
 
     res.status(200).json(updatePost);
   } catch (error) {
-    return next(new HttpErrors(error));
+    return next(new HttpErrors("from backend",error));
   }
 };
 
