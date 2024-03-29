@@ -11,23 +11,19 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname);
 // Protected
 const createPost = async (req, res, next) => {
   try {
-    let { title, category, description } = req.body;
-    let thumbnail = req.files.thumbnail;
+    let { title, category, description, thumbnail } = req.body;
 
     // Check if all required fields are provided
     if (!title || !category || !description || !thumbnail) {
       return next(new HttpErrors("Fill in all fields.", 422));
     }
 
-    // Read the image file data
-    let thumbnailData = thumbnail.data;
-
-    // Create a new post with the uploaded file
+    // Create a new post with the base64-encoded thumbnail data
     const newPost = await Post.create({
       title,
       category,
       description,
-      thumbnail: thumbnailData, // Save image data as thumbnail
+      thumbnail: thumbnail, // Save base64 image data as thumbnail
       creator: req.user.id,
     });
     
@@ -45,6 +41,7 @@ const createPost = async (req, res, next) => {
     return next(new HttpErrors(error));
   }
 };
+
 
 
 // get  Post cntroller
