@@ -138,32 +138,36 @@ const editPost = async (req, res, next) => {
 // DELETE /api/posts/:id
 // protected
 const deletePost = async (req, res, next) => {
-try {
-  const postId=req.params.id;
-  if(!postId){
-    return next(new HttpErrors("Post not available,400"))
-  }
-  const post =await Post.findById(postId);
-  const filename=post.thumbnail;
-  //delete the thumbnail 
+  try {
+    const postId = req.params.id;
+    if (!postId) {
+      return next(new HttpErrors("Post ID not provided", 400)); // Correct error format
+    }
 
-  fs.unlink(path.join(__dirname,'../','uploads',filename),async (err)=>{if(err){
-    return next(new HttpErrors(err));
+    // Check if the post exists
+    const post = await Post.findById(postId);
+    if (!post) {
+      return next(new HttpErrors("Post not found", 404)); // Return 404 if the post does not exist
+    }
 
-  }else{
+    // Delete the post
     await Post.findByIdAndDelete(postId);
-    const currentUser=await User.findById(req.user.id);
-    const userPostCount=currentUser.posts-1;
-    await User .findByIdAndUpdate(req.user.id,{posts:userPostCount})
+
+    // Update user's post count
+    const currentUser = await User.findById(req.user.id);
+    if (currentUser) { // Check if currentUser is not null or undefined
+      const userPostCount = currentUser.posts - 1;
+      await User.findByIdAndUpdate(req.user.id, { posts: userPostCount });
+    }
+
+    // Return success response
+    res.status(200).json({ message: `Post ${postId} deleted successfully`, postId: postId });
+  } catch (error) {
+    // Pass error to error handling middleware
+    return next(new HttpErrors(error));
   }
-
-  })
-  res.status(200).json(`Post ${postId} Delete succesfully`);
-} catch (error) {
-  return next(new HttpErrors(error));
-
-}
 };
+
 
 export {
   createPost,
