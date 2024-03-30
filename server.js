@@ -21,20 +21,23 @@ const app = express();
 app.use(express.json({ extended: true }));
 
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({ credentials: true, origin: "https://mern-blog-webside.onrender.com" }));
-// const allowedOrigins = [process.env.origin1, process.env.origin2];
+// app.use(cors({ credentials: true, origin: "https://mern-blog-webside.onrender.com" }));
 
-// app.use(cors({
-//   credentials: true,
-//   origin: function (origin, callback) {
-//     // Check if the origin is in the allowed origins list or if it's undefined (for requests without origin header)
-//     if (!origin || allowedOrigins.includes(origin)) {
-//       callback(null, true);
-//     } else {
-//       callback(new Error('Not allowed by CORS'));
-//     }
-//   }
-// }));
+const allowedOrigins = ["https://mern-blog-webside.onrender.com", " http://localhost:3000"];
+
+app.use(cors({
+  credentials: true,
+  origin: function (origin, callback) {
+    // Check if the origin is in the allowed origins list or if it's undefined (for requests without origin header)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}));
+
+
 app.use(upload());
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
