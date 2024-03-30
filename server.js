@@ -23,19 +23,20 @@ app.use(express.json({ extended: true }));
 app.use(express.urlencoded({ extended: true }));
 // app.use(cors({ credentials: true, origin: "https://mern-blog-webside.onrender.com" }));
 
-const allowedOrigins = ["https://mern-blog-webside.onrender.com", " http://localhost:3000"];
+const allowedOrigins = ["https://mern-blog-webside.onrender.com", "http://localhost:3000"];
 
 app.use(cors({
   credentials: true,
   origin: function (origin, callback) {
     // Check if the origin is in the allowed origins list or if it's undefined (for requests without origin header)
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin.trim())) { // Trim origin string
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   }
 }));
+
 
 
 app.use(upload());
