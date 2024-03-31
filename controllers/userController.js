@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import fs from "fs";
 import path from "path";
+import sharp from 'sharp'
 
 import { v4 as uuid } from "uuid";
 
@@ -113,70 +114,33 @@ const getUser = async (req, res, next) => {
 // change user avatar
 //port : api/users/change-avatar
 //Protected
-const checkImage = (req, res, next) => {
-  if (!req.files || !req.files.avatar) {
-    return next(new HttpErrors("Please choose an image", 422));
-  }
-  next();
-};
-
 const changeAvatar = async (req, res, next) => {
+  
   try {
-    // Find user from database
-    const user = await User.findById(req.user.id);
+    // Update the user's avatar in the database
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      { avatar: req.body.avatar },
+      { new: true }
+    );
 
-    if (!user) {
+    // Check if the user was found and updated
+    if (!updatedUser) {
+      // If the user is not found, return a 404 Not Found error
       return next(new HttpErrors("User not found", 404));
     }
 
-    if (user.avatar) {
-      fs.unlink(path.join(__dirname, "../", "uploads", user.avatar), (err) => {
-        if (err) {
-          return next(new HttpErrors(err));
-        }
-      });
-    }
-
-    const { avatar } = req.files;
-    if (!avatar) {
-      return next(new HttpErrors("Please choose an image", 422));
-    }
-
-    if (avatar.size > 50000) {
-      return next(
-        new HttpErrors("Profile picture too big. Should be less than 50kb")
-      );
-    }
-
-    let filename = avatar.name;
-    let splitedfilename = filename.split(".");
-    let newfilename =
-      splitedfilename[0] +
-      uuid() +
-      "." +
-      splitedfilename[splitedfilename.length - 1];
-
-    avatar.mv(
-      path.join(__dirname, "../", "uploads", newfilename),
-      async (error) => {
-        if (error) {
-          return next(new HttpErrors(error));
-        }
-        const updateavatar = await User.findByIdAndUpdate(
-          req.user.id,
-          { avatar: newfilename },
-          { new: true }
-        );
-        if (!updateavatar) {
-          return next(new HttpErrors("Avatar couldn't be changed.", 422));
-        }
-        res.status(200).json(updateavatar);
-      }
-    );
+    // Send a success response with the updated user object
+    res.status(200).json({ message: "Avatar updated successfully", user: updatedUser });
   } catch (error) {
-    return next(new HttpErrors(error));
+    // If an error occurs, pass it to the error handling middleware
+    return next(new HttpErrors("Failed to update avatar", 500));
   }
 };
+
+
+
+
 
 
 // edit user avatar
