@@ -124,7 +124,7 @@ const changeAvatar = async (req, res, next) => {
       .jpeg({ quality: 70 }) // Convert image to JPEG format with 70% quality
       .toBuffer(); // Convert the processed image to buffer
       const base64Image = compressedImageBuffer.toString('base64');
-      const updatedAvatar = await User.findByIdAndUpdate(req.user.id, { avatar: base64Image }, { new: true });
+      const updatedAvatar = await User.findByIdAndUpdate(req.user.id, { avatar: `data:image/jpeg;base64,${base64Image}` }, { new: true });
       if (!updatedAvatar) {
         return next(new HttpErrors("Avatar couldn't be changed ", 422));
       }
