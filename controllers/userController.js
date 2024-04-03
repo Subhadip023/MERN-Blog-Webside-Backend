@@ -112,51 +112,25 @@ const getUser = async (req, res, next) => {
 };
 
 
-
 const changeAvatar = async (req, res, next) => {
   try {
     if (!req.files.avatar) {
       return next(new HttpErrors("Please Choose an image ", 422));
     }
-    try {
-      const existingUser = await User.findById(req.user.id);
-      if (existingUser.avatar) {
-        const filePath = path.join(__dirname, '..', 'uploads', existingUser.avatar);
-        fs.unlink(filePath, (err) => {
-          if (err) {
-            return next(new HttpErrors(err));
-          }
-        });
-      }
-    } catch (error) {
-      console.error(error); // Handle any errors that occur
-    }
-    
-    
-    // Get the uploaded avatar
     const { avatar } = req.files;
     // Compress and resize the image using sharp
     const compressedImageBuffer = await sharp(avatar.data)
       .resize({ width: 500 }) // Resize image to a maximum width of 500 pixels
       .jpeg({ quality: 70 }) // Convert image to JPEG format with 70% quality
       .toBuffer(); // Convert the processed image to buffer
-
-    // Save the compressed image to the server
-    const newFilename = `Avatar-${uuid()}.jpg`; // Assuming the compressed image will be in JPEG format
-    const uploadPath = path.join(__dirname, '../', 'uploads', newFilename);
-    fs.writeFile(uploadPath, compressedImageBuffer, async (err) => {
-      if (err) {
-        return next(new HttpErrors(err));
-      }
-
-      // Update the user's avatar in the database
-      const updatedAvatar = await User.findByIdAndUpdate(req.user.id, { avatar: newFilename }, { new: true });
+      const base64Image = compressedImageBuffer.toString('base64');
+      const updatedAvatar = await User.findByIdAndUpdate(req.user.id, { avatar: base64Image }, { new: true });
       if (!updatedAvatar) {
         return next(new HttpErrors("Avatar couldn't be changed ", 422));
       }
 
       res.status(200).json(updatedAvatar);
-    });
+  
   } catch (error) {
     return next(new HttpErrors(error));
   }
