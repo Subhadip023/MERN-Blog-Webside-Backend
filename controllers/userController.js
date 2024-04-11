@@ -84,9 +84,7 @@ const loginUser = async (req, res, next) => {
     // If email and password are correct, create and return a token (you'll need to implement this)
     // Generate a JWT token or session token here
     const { _id: id, name } = user;
-    const token = jwt.sign({ id, name }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    const token = jwt.sign({ id, name }, process.env.JWT_SECRET);
     res.status(200).json({ token, id, name }); // Return the token to the client
   } catch (error) {
     // Handle unexpected errors
